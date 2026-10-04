@@ -7,6 +7,7 @@ Read-only homebrew storage browser for PlayStation 3 with an enabled homebrew en
 **Current version: 0.1.7** · Title ID: `STOR00001`
 
 ![Application icon](assets/ICON0.PNG)
+(assets/preview001.png) 
 
 ## Installation
 
