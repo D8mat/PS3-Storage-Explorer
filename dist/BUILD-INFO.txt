@@ -1,0 +1,11 @@
+PS3 Storage Explorer 0.1.7
+TITLE_ID: STOR00001
+APP_VER: 01.07
+CONTENT_ID: UP0001-STOR00001_00-0000000000000000
+Package: PS3-Storage-Explorer-0.1.7.pkg
+Size: 97120 bytes
+SHA256: 5275a76f2fc844f46d3dad0d086703bac8867cd7cc943ead4736c79ab26df910
+Build: Windows PSDK3v2 / PPU GCC 4.5.2, compressed NPDRM EBOOT, debug/homebrew PKG.
+Verification: independent PKG decryption and payload comparison.
+See ../docs/BUILDING.md for toolchain requirements.
+See ../README.md for hardware validation status and limitations.

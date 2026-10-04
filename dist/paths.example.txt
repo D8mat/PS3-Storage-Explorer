@@ -1,0 +1,5 @@
+# Upload as /dev_hdd0/game/STOR00001/USRDIR/paths.txt
+# Remove the leading # to enable your own existing folders.
+# /dev_hdd0/MojeHry/PS1
+# /dev_hdd0/MojeHry/PS2
+# /dev_usb000/ArchivHry
