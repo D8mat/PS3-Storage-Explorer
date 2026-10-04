@@ -45,7 +45,7 @@ static char location[PATH_CAP]="/dev_hdd0/game";
 enum { UP=1, DOWN=2, OPEN=4, BACK=8, SORT=16, ROOT=32, EXIT=64, RESCAN=128, PAGE_PREV=256, PAGE_NEXT=512, DEVICE_PREV=1024, DEVICE_NEXT=2048, CLEAR_MARKS=4096 };
 
 /* Original 5x7 bitmap glyphs, row-major. Lowercase is displayed uppercase. */
-static const char alphabet[]="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/_-?[]()+";
+static const char alphabet[]="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/_-?[]()+\'\"";
 static const unsigned char glyphs[][7]={
 {14,17,17,31,17,17,17},{30,17,17,30,17,17,30},{14,17,16,16,16,17,14},
 {30,17,17,17,17,17,30},{31,16,16,30,16,16,31},{31,16,16,30,16,16,16},
@@ -62,11 +62,50 @@ static const unsigned char glyphs[][7]={
 {14,17,17,15,1,1,14},{0,0,0,0,0,0,0},{0,0,0,0,0,6,6},
 {0,6,6,0,6,6,0},{1,2,2,4,8,8,16},{0,0,0,0,0,0,31},
 {0,0,0,31,0,0,0},{14,17,1,2,4,0,4},{14,8,8,8,8,8,14},
-{14,2,2,2,2,2,14},{2,4,8,8,8,4,2},{8,4,2,2,2,4,8},{0,4,4,31,4,4,0}};
+{14,2,2,2,2,2,14},{2,4,8,8,8,4,2},{8,4,2,2,2,4,8},{0,4,4,31,4,4,0},
+{0,4,4,0,0,0,0},{10,10,0,0,0,0,0}};
+/* The RSX bitmap font is intentionally small. Decode UTF-8 and transliterate
+ * common Latin and typographic characters instead of displaying a question
+ * mark for every accented game title. Unknown scripts still use '?'. */
+static unsigned utf8_char(const unsigned char **cursor) {
+    const unsigned char *p=*cursor; unsigned c=*p++;
+    if(c<0x80) { *cursor=p; return c; }
+    if((c&0xe0)==0xc0 && (p[0]&0xc0)==0x80) { c=((c&31)<<6)|(p[0]&63); *cursor=p+1; return c; }
+    if((c&0xf0)==0xe0 && (p[0]&0xc0)==0x80 && (p[1]&0xc0)==0x80) {
+        c=((c&15)<<12)|((p[0]&63)<<6)|(p[1]&63); *cursor=p+2; return c;
+    }
+    if((c&0xf8)==0xf0 && (p[0]&0xc0)==0x80 && (p[1]&0xc0)==0x80 && (p[2]&0xc0)==0x80) {
+        c=((c&7)<<18)|((p[0]&63)<<12)|((p[1]&63)<<6)|(p[2]&63); *cursor=p+3; return c;
+    }
+    *cursor=p; return '?';
+}
+static unsigned display_char(unsigned c) {
+    switch(c) {
+    /* Latin letters with diacritics, upper and lower case. */
+    case 0xC0:case 0xC1:case 0xC2:case 0xC3:case 0xC4:case 0xC5:case 0xE0:case 0xE1:case 0xE2:case 0xE3:case 0xE4:case 0xE5:return 'A';
+    case 0xC7:case 0xE7:return 'C'; case 0xC8:case 0xC9:case 0xCA:case 0xCB:case 0xE8:case 0xE9:case 0xEA:case 0xEB:return 'E';
+    case 0xCC:case 0xCD:case 0xCE:case 0xCF:case 0xEC:case 0xED:case 0xEE:case 0xEF:return 'I';
+    case 0xD1:case 0xF1:return 'N'; case 0xD2:case 0xD3:case 0xD4:case 0xD5:case 0xD6:case 0xD8:case 0xF2:case 0xF3:case 0xF4:case 0xF5:case 0xF6:case 0xF8:return 'O';
+    case 0xD9:case 0xDA:case 0xDB:case 0xDC:case 0xF9:case 0xFA:case 0xFB:case 0xFC:return 'U'; case 0xDD:case 0xFD:case 0xFF:return 'Y';
+    case 0xD0:case 0xF0:return 'D'; case 0xDE:case 0xFE:return 'T'; case 0xDF:return 'S';
+    case 0x160:case 0x161:return 'S'; case 0x17D:case 0x17E:return 'Z'; case 0x100:case 0x101:return 'A';
+    case 0x10C:case 0x10D:return 'C'; case 0x11A:case 0x11B:return 'E'; case 0x13D:case 0x13E:return 'L';
+    case 0x141:case 0x142:return 'L'; case 0x148:case 0x149:return 'N'; case 0x14A:case 0x14B:return 'N';
+    case 0x15A:case 0x15B:return 'S'; case 0x164:case 0x165:return 'T'; case 0x17B:case 0x17C:return 'Z';
+    case 0x110:case 0x111:return 'D'; case 0x192:return 'F'; case 0x132:case 0x133:return 'I';
+    /* punctuation frequently present in PARAM.SFO titles */
+    case 0x2018:case 0x2019:case 0x201A:case 0x2032:return '\''; case 0x201C:case 0x201D:case 0x201E:return '"';
+    case 0x2013:case 0x2014:case 0x2212:return '-'; case 0x2026:return '.'; case 0x00A0:return ' ';
+    case 0x2122:return 'T'; case 0x00A9:case 0x00AE:return ' '; case 0x20AC:return 'E';
+    default:return c;
+    }
+}
 static void text(int x,int y,const char *s,u32 color) {
     int scale=width>=1000?2:1,origin=x;
-    for(;*s;s++,x+=6*scale) {
-        const char *g=strchr(alphabet,toupper((unsigned char)*s)); int row,col,dx,dy;
+    const unsigned char *cursor=(const unsigned char *)s;
+    while(*cursor) {
+        unsigned code=display_char(utf8_char(&cursor));
+        const char *g=strchr(alphabet,toupper((unsigned char)code)); int row,col,dx,dy;
         if(x+5*scale>=width-origin) break;
         if(!g) g=strchr(alphabet,'?');
         for(row=0;row<7;row++) for(col=0;col<5;col++)
@@ -75,6 +114,7 @@ static void text(int x,int y,const char *s,u32 color) {
                     int px=x+col*scale+dx,py=y+row*scale+dy;
                     if(px>=0 && px<width && py>=0 && py<height) pixels[buffer][py*width+px]=color;
                 }
+        x+=6*scale;
     }
 }
 static int begin(void) {
