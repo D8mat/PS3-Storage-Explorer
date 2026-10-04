@@ -8,6 +8,8 @@ Read-only homebrew storage browser for PlayStation 3 with an enabled homebrew en
 
 ![Application icon](assets/ICON0.PNG)
 
+![Application preview](assets/preview001.png)
+
 ## Installation
 
 1. Download [PS3-Storage-Explorer-0.1.7.pkg](dist/PS3-Storage-Explorer-0.1.7.pkg).

@@ -8,6 +8,8 @@ Homebrew prehliadač úložiska PS3 s aktívnym HEN alebo kompatibilným CFW/Cob
 
 ![Ikona aplikácie](assets/ICON0.PNG)
 
+![Náhľad aplikácie](assets/preview001.png)
+
 ## Inštalácia
 
 1. Stiahni [PS3-Storage-Explorer-0.1.7.pkg](dist/PS3-Storage-Explorer-0.1.7.pkg).
